@@ -769,4 +769,24 @@ public class SplitterTest extends TestCase {
     } catch (IllegalArgumentException expected) {
     }
   }
+
+    public void testMapSplitter_StringSeparator_ShouldIgnoreKeyValueSeparatorAfterFirstEntity() {
+
+        Splitter.MapSplitter mapSplitter = Splitter.on(";").withKeyValueSeparator("=");
+        Map<String, String> maps = mapSplitter.split("key=value;key2=value==;key3=value3=5");
+
+        ImmutableMap<String, String> expected = ImmutableMap.of("key", "value", "key2", "value==", "key3","value3=5");
+        assertThat(maps).isEqualTo(expected);
+        assertThat(asList(maps.entrySet())).isEqualTo(asList(expected.entrySet()));
+    }
+
+    public void  testMapSplitter_CharacterSeparator_ShouldIgnoreKeyValueSeparatorAfterFirstEntity() {
+
+        Splitter.MapSplitter mapSplitter = Splitter.on(";").withKeyValueSeparator('=');
+        Map<String, String> maps = mapSplitter.split("key=value;key2=value==;key3=value3=5");
+
+        ImmutableMap<String, String> expected = ImmutableMap.of("key", "value", "key2", "value==", "key3","value3=5");
+        assertThat(maps).isEqualTo(expected);
+        assertThat(asList(maps.entrySet())).isEqualTo(asList(expected.entrySet()));
+    }
 }

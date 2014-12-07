@@ -433,8 +433,46 @@ public final class Splitter {
    */
   @CheckReturnValue
   @Beta
-  public MapSplitter withKeyValueSeparator(String separator) {
-    return withKeyValueSeparator(on(separator));
+  public MapSplitter withKeyValueSeparator(final String separator) {
+      checkArgument(separator.length() != 0,
+              "The separator may not be the empty string.");
+
+      Splitter splitter = new Splitter(new Strategy() {
+          @Override
+          public SplittingIterator iterator(
+                  Splitter splitter, CharSequence toSplit) {
+              return new SplittingIterator(splitter, toSplit) {
+
+                  boolean ignoreSeparator = false;
+
+                  @Override
+                  public int separatorStart(int start) {
+                      int separatorLength = separator.length();
+
+                      positions:
+                      for (int p = start, last = toSplit.length() - separatorLength;
+                           p <= last; p++) {
+                          for (int i = 0; i < separatorLength; i++) {
+                              if (toSplit.charAt(i + p) != separator.charAt(i) || ignoreSeparator) {
+
+                                  continue positions;
+                              }
+                          }
+                          ignoreSeparator = true;
+                          return p;
+                      }
+                      return -1;
+                  }
+
+                  @Override
+                  public int separatorEnd(int separatorPosition) {
+                      return separatorPosition + separator.length();
+                  }
+              };
+          }
+      });
+
+      return withKeyValueSeparator(splitter);
   }
 
   /**
@@ -445,8 +483,38 @@ public final class Splitter {
    */
   @CheckReturnValue
   @Beta
-  public MapSplitter withKeyValueSeparator(char separator) {
-    return withKeyValueSeparator(on(separator));
+  public MapSplitter withKeyValueSeparator(final char separator) {
+
+      final CharMatcher charMatcher = CharMatcher.is(separator);
+
+      Splitter splitter = new Splitter(new Strategy() {
+          @Override
+          public SplittingIterator iterator(
+                  Splitter splitter, CharSequence toSplit) {
+              return new SplittingIterator(splitter, toSplit) {
+
+                  boolean ignoreSeparator = false;
+
+                  @Override
+                  int separatorStart(int start) {
+                      int index = -1;
+                      if (ignoreSeparator == false) {
+                          index = charMatcher.indexIn(toSplit, start);
+                          ignoreSeparator = true;
+                      }
+
+                      return index;
+                  }
+
+                  @Override
+                  int separatorEnd(int separatorPosition) {
+                      return separatorPosition + 1;
+                  }
+              };
+          }
+      });
+
+      return withKeyValueSeparator(splitter);
   }
 
   /**
